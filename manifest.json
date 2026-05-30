@@ -1,0 +1,11 @@
+{
+  "name": "Plan Giảm Mỡ 30 Ngày",
+  "short_name": "GiamMo30",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#0f172a",
+  "theme_color": "#0f172a",
+  "description": "PWA quản lý kế hoạch thực đơn giảm mỡ nội tạng 30 ngày.",
+  "lang": "vi"
+}

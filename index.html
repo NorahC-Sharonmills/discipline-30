@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <meta name="theme-color" content="#0f172a">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="GiamMo30">
+    <title>Plan Giảm Mỡ 30 Ngày</title>
+    <link rel="manifest" href="manifest.json">
+    <link rel="stylesheet" href="style.css">
+  </head>
+  <body>
+    <div class="app-shell">
+      <header class="app-header">
+        <div>
+          <p class="eyebrow">25/05/2026 - 23/06/2026</p>
+          <h1>Plan Giảm Mỡ 30 Ngày</h1>
+        </div>
+        <span id="syncStatus" class="sync-pill">Offline-ready</span>
+      </header>
+
+      <nav class="tabbar" aria-label="Điều hướng chính">
+        <button class="tab-button active" type="button" data-view="dashboard">Tổng quan</button>
+        <button class="tab-button" type="button" data-view="today">Hôm nay</button>
+        <button class="tab-button" type="button" data-view="days">30 ngày</button>
+        <button class="tab-button" type="button" data-view="stats">Thống kê</button>
+      </nav>
+
+      <main>
+        <section id="dashboardView" class="view active"></section>
+        <section id="todayView" class="view"></section>
+        <section id="daysView" class="view"></section>
+        <section id="statsView" class="view"></section>
+      </main>
+    </div>
+
+    <div id="detailModal" class="modal" aria-hidden="true">
+      <div class="modal-panel" role="dialog" aria-modal="true" aria-labelledby="detailTitle">
+        <div class="modal-header">
+          <h2 id="detailTitle">Chi tiết ngày</h2>
+          <button id="closeDetail" class="icon-button" type="button" aria-label="Đóng">×</button>
+        </div>
+        <div id="detailBody"></div>
+      </div>
+    </div>
+
+    <script src="app.js"></script>
+  </body>
+</html>
