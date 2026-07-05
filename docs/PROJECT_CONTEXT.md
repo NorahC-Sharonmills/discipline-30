@@ -52,6 +52,7 @@ User data:
 - `DELETE /api/logs/:dayId`
 - `PUT /api/plan-edits/:dayId`
 - `PUT /api/goals`
+- `POST /api/reset`
 - `POST /api/import`
 
 Notifications:
@@ -61,6 +62,9 @@ Notifications:
 
 The first authenticated load imports legacy `discipline30.logs.v1` and
 `discipline30.planEdits.v1` values without overwriting existing server rows.
+Resetting starts a new 30-day cycle from the selected local date, clears logs,
+plan edits, goals, reminder delivery history, local cache, and queued writes,
+while preserving the account and push subscriptions.
 
 ## Local Setup
 

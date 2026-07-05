@@ -1,5 +1,18 @@
 # Repository Guide
 
+# Codex Instructions
+
+- Do not read, inspect, search, summarize, or modify the `omni-agents/` folder unless I explicitly ask.
+- If `docs/TREE.md` exists, treat it as the source of truth for allowed project files. Do not read, inspect, search, summarize, or modify any file or folder not listed in `docs/TREE.md` unless I explicitly ask.
+
+Before making code changes, inspect relevant local skills in `.agent/*/SKILL.md`.
+
+Default required skills:
+- `omni-agents/.agent/no-test-files/SKILL.md`
+- `omni-agents/.agent/token-saver/SKILL.md`
+- `omni-agents/.agent/final-response-format/SKILL.md`
+- `omni-agents/.agent/no-run-without-permission/SKILL.md`
+
 ## Read First
 
 1. Read `docs/PROJECT_CONTEXT.md`.

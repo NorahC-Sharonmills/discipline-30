@@ -17,7 +17,7 @@ import {
   User
 } from "lucide-react";
 import { api, flushQueue, importLegacyData } from "./api";
-import { buildPlan, mergePlan } from "./plan";
+import { buildPlan, formatDate, mergePlan } from "./plan";
 import { dataLoaded, signedOut, userLoaded } from "./store";
 import { AuthPage } from "./components/AuthPage";
 import { ToastRegion } from "./components/Toast";
@@ -42,7 +42,7 @@ export function App() {
   const navigate = useNavigate();
   const location = useLocation();
   const { token, user } = useSelector((state) => state.session);
-  const { logs, planEdits, syncState } = useSelector((state) => state.data);
+  const { logs, planEdits, plan, syncState } = useSelector((state) => state.data);
   const [theme, setTheme] = useState(localStorage.getItem("discipline30.theme") || "light");
   const [mobileNav, setMobileNav] = useState(false);
   const [toasts, setToasts] = useState([]);
@@ -68,10 +68,14 @@ export function App() {
     (async () => {
       try {
         await importLegacyData();
-        const [profile, data] = await Promise.all([api("/me"), api("/data")]);
+        const [profile, data, savedPlan] = await Promise.all([
+          api("/me"),
+          api("/data"),
+          api("/plan")
+        ]);
         if (!active) return;
         dispatch(userLoaded(profile.user));
-        dispatch(dataLoaded(data));
+        dispatch(dataLoaded({ ...data, plan: savedPlan || undefined }));
       } catch (error) {
         if (!navigator.onLine) {
           showToast("Đang dùng dữ liệu đã lưu trên thiết bị.", "warning");
@@ -100,7 +104,10 @@ export function App() {
     return () => window.removeEventListener("online", syncPending);
   }, [dispatch, showToast, token]);
 
-  const days = useMemo(() => mergePlan(buildPlan(planEdits), logs), [logs, planEdits]);
+  const days = useMemo(
+    () => mergePlan(buildPlan(planEdits, plan.startDate), logs),
+    [logs, plan.startDate, planEdits]
+  );
 
   if (!token) return <AuthPage showToast={showToast} />;
 
@@ -145,7 +152,7 @@ export function App() {
           </button>
           <div>
             <h1>{navItems.find((item) => item.to === location.pathname)?.label || "Discipline 30"}</h1>
-            <p>25/05/2026 - 23/06/2026</p>
+            <p>{formatDate(plan.startDate)} - {formatDate(plan.endDate)}</p>
           </div>
           <div className="topbar-actions">
             <span className={`sync-state ${syncState}`}>

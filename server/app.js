@@ -15,7 +15,8 @@ import {
   editSchema,
   goalSchema,
   logSchema,
-  planSchema
+  planSchema,
+  resetProgressSchema
 } from "./validation.js";
 
 export const app = express();
@@ -225,6 +226,35 @@ app.put("/api/goals", requireAuth, async (req, res, next) => {
       [req.user.id, goals]
     );
     res.json({ ok: true, goals });
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.post("/api/reset", requireAuth, async (req, res, next) => {
+  try {
+    const { startDate } = resetProgressSchema.parse(req.body);
+    const result = await query(
+      `WITH deleted_logs AS (
+         DELETE FROM daily_logs WHERE user_id = $1
+       ), deleted_edits AS (
+         DELETE FROM plan_edits WHERE user_id = $1
+       ), deleted_goals AS (
+         DELETE FROM goals WHERE user_id = $1
+       ), deleted_deliveries AS (
+         DELETE FROM reminder_deliveries WHERE user_id = $1
+       )
+       INSERT INTO plans (user_id, start_date, end_date, plan_data)
+       VALUES ($1, $2::date, $2::date + 29, '{}'::jsonb)
+       ON CONFLICT (user_id) DO UPDATE SET
+         start_date = EXCLUDED.start_date,
+         end_date = EXCLUDED.end_date,
+         plan_data = EXCLUDED.plan_data,
+         updated_at = NOW()
+       RETURNING start_date AS "startDate", end_date AS "endDate", plan_data AS "planData"`,
+      [req.user.id, startDate]
+    );
+    res.json({ ok: true, plan: result.rows[0] });
   } catch (error) {
     next(error);
   }

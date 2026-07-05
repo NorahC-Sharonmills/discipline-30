@@ -68,6 +68,13 @@ export async function flushQueue() {
   return synced;
 }
 
+export function clearLocalProgress() {
+  localStorage.removeItem(OLD_LOGS_KEY);
+  localStorage.removeItem(OLD_EDITS_KEY);
+  localStorage.setItem(IMPORT_KEY, "1");
+  localStorage.removeItem(QUEUE_KEY);
+}
+
 function getQueue() {
   try {
     return JSON.parse(localStorage.getItem(QUEUE_KEY)) || [];

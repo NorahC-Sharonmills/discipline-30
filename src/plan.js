@@ -36,12 +36,18 @@ const weekSettings = [
 ];
 
 function addDays(dateKey, offset) {
-  const date = new Date(`${dateKey}T00:00:00`);
-  date.setDate(date.getDate() + offset);
+  const [year, month, day] = dateKey.split("-").map(Number);
+  const date = new Date(Date.UTC(year, month - 1, day + offset));
   return date.toISOString().slice(0, 10);
 }
 
-export function buildPlan(edits = {}) {
+function localDateKey() {
+  const now = new Date();
+  const offset = now.getTimezoneOffset() * 60_000;
+  return new Date(now.getTime() - offset).toISOString().slice(0, 10);
+}
+
+export function buildPlan(edits = {}, startDate = PLAN_START) {
   return Array.from({ length: 30 }, (_, index) => {
     const id = index + 1;
     const week = weekSettings.find((item) => id <= item.max);
@@ -49,7 +55,7 @@ export function buildPlan(edits = {}) {
     const targetKcal = edit.targetKcal ?? week.kcal;
     return {
       id,
-      date: addDays(PLAN_START, index),
+      date: addDays(startDate, index),
       targetKcal,
       deficitFrom1709: BASE_KCAL - targetKcal,
       plainWaterLiter: 1.15,
@@ -67,7 +73,7 @@ export function buildPlan(edits = {}) {
 }
 
 export function mergePlan(plan, logs) {
-  const today = new Date().toISOString().slice(0, 10);
+  const today = localDateKey();
   return plan.map((day) => {
     const log = logs[String(day.id)] || {};
     const status = log.completed

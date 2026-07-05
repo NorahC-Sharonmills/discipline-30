@@ -2,6 +2,19 @@ import { configureStore, createSlice } from "@reduxjs/toolkit";
 
 const TOKEN_KEY = "discipline30.token.v1";
 const CACHE_KEY = "discipline30.cache.v2";
+const DEFAULT_PLAN = {
+  startDate: "2026-05-25",
+  endDate: "2026-06-23",
+  planData: {}
+};
+const DEFAULT_GOALS = {
+  targetWeight: "",
+  targetWaist: "",
+  weeklyCompletion: 5,
+  reminderTime: "20:00",
+  timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || "Asia/Bangkok",
+  emailReminder: false
+};
 
 function readJson(key, fallback) {
   try {
@@ -41,19 +54,17 @@ const dataSlice = createSlice({
   initialState: {
     logs: cached.logs || {},
     planEdits: cached.planEdits || {},
-    goals: cached.goals || {
-      targetWeight: "",
-      targetWaist: "",
-      weeklyCompletion: 5,
-      reminderTime: "20:00",
-      timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || "Asia/Bangkok",
-      emailReminder: false
-    },
+    goals: { ...DEFAULT_GOALS, ...(cached.goals || {}) },
+    plan: { ...DEFAULT_PLAN, ...(cached.plan || {}) },
     syncState: "idle"
   },
   reducers: {
     dataLoaded(state, action) {
-      Object.assign(state, action.payload, { syncState: "synced" });
+      Object.assign(state, action.payload, {
+        goals: { ...DEFAULT_GOALS, ...(action.payload.goals || {}) },
+        plan: { ...DEFAULT_PLAN, ...(action.payload.plan || state.plan) },
+        syncState: "synced"
+      });
     },
     logSaved(state, action) {
       state.logs[String(action.payload.dayId)] = action.payload.log;
@@ -69,6 +80,13 @@ const dataSlice = createSlice({
     },
     syncChanged(state, action) {
       state.syncState = action.payload;
+    },
+    progressReset(state, action) {
+      state.logs = {};
+      state.planEdits = {};
+      state.goals = { ...DEFAULT_GOALS };
+      state.plan = { ...DEFAULT_PLAN, ...action.payload };
+      state.syncState = "synced";
     },
     cleared() {
       return dataSlice.getInitialState();
@@ -88,6 +106,7 @@ export const {
   planEditSaved,
   goalsSaved,
   syncChanged,
+  progressReset,
   cleared
 } = dataSlice.actions;
 
@@ -104,6 +123,7 @@ store.subscribe(() => {
     user: state.session.user,
     logs: state.data.logs,
     planEdits: state.data.planEdits,
-    goals: state.data.goals
+    goals: state.data.goals,
+    plan: state.data.plan
   }));
 });

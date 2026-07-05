@@ -244,6 +244,9 @@ h1, h2, h3 { letter-spacing: 0; }
 .setting-row strong, .setting-row small { display: block; }
 .setting-row strong { font-size: 12px; }
 .setting-row small { margin-top: 4px; color: var(--muted); font-size: 10px; }
+.danger-zone { border-color: color-mix(in srgb, var(--danger) 32%, var(--line)); }
+.danger-zone .eyebrow, .danger-zone .setting-icon { color: var(--danger); }
+.danger-zone .setting-icon { background: color-mix(in srgb, var(--danger) 10%, var(--surface)); }
 
 .toast-region { position: fixed; right: 20px; bottom: 20px; z-index: 80; display: grid; gap: 9px; width: min(calc(100% - 40px), 360px); }
 .toast { display: flex; align-items: center; gap: 10px; border: 1px solid var(--line); border-radius: 7px; background: var(--surface); padding: 13px 14px; box-shadow: 0 14px 38px rgba(0,0,0,.16); color: var(--text); font-size: 12px; font-weight: 650; }

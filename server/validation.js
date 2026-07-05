@@ -47,3 +47,7 @@ export const planSchema = z.object({
   message: "Ngày kết thúc phải sau ngày bắt đầu.",
   path: ["endDate"]
 });
+
+export const resetProgressSchema = z.object({
+  startDate: z.string().date()
+});
