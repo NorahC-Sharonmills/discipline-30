@@ -43,6 +43,8 @@ discipline-30/
 |-- package-lock.json
 |-- package.json
 |-- README.md
+|-- install.bat
+|-- install.sh
 |-- run-public-server.bat
 |-- run-public-server.sh
 `-- vite.config.js

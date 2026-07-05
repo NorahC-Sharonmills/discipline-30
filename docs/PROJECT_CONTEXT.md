@@ -70,6 +70,10 @@ while preserving the account and push subscriptions.
 
 Requirements: Node.js 20+ and PostgreSQL with `pgcrypto`.
 
+Automated setup is available through `install.bat` on Windows and `install.sh`
+on macOS/Linux. The matching `run-public-server` script stops existing
+listeners on the configured API port and Vite port 4173 before starting.
+
 ```powershell
 Copy-Item .env.example .env
 psql $env:DATABASE_URL -f .\database\schema.sql

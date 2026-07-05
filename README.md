@@ -14,6 +14,24 @@ qua Vite hoặc Express.
 
 ## Cài đặt lần đầu
 
+### Cài đặt tự động
+
+Windows:
+
+```powershell
+.\install.bat
+```
+
+macOS/Linux:
+
+```bash
+chmod +x install.sh run-public-server.sh
+./install.sh
+```
+
+Các installer giữ nguyên `.env` nếu file đã tồn tại. Khi tạo `.env` mới, script
+tự sinh `JWT_SECRET`; hãy kiểm tra lại `DATABASE_URL` trước khi chạy.
+
 ### 1. Tạo database
 
 Mở PowerShell và chạy:
@@ -70,6 +88,15 @@ Bạn cũng có thể chạy:
 ```powershell
 .\run-public-server.bat
 ```
+
+Trên macOS/Linux:
+
+```bash
+./run-public-server.sh
+```
+
+Hai script chạy sẽ tự dừng tiến trình đang lắng nghe trên cổng API trong `.env`
+và cổng Vite `4173` trước khi khởi động.
 
 Nhấn `Ctrl+C` để dừng frontend và backend.
 
