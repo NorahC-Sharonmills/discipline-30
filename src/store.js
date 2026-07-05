@@ -2,11 +2,26 @@ import { configureStore, createSlice } from "@reduxjs/toolkit";
 
 const TOKEN_KEY = "discipline30.token.v1";
 const CACHE_KEY = "discipline30.cache.v2";
-const DEFAULT_PLAN = {
-  startDate: "2026-05-25",
-  endDate: "2026-06-23",
-  planData: {}
-};
+
+function addLocalDays(dateKey, offset) {
+  const [year, month, day] = dateKey.split("-").map(Number);
+  return new Date(Date.UTC(year, month - 1, day + offset)).toISOString().slice(0, 10);
+}
+
+function localDateKey() {
+  const now = new Date();
+  const offset = now.getTimezoneOffset() * 60_000;
+  return new Date(now.getTime() - offset).toISOString().slice(0, 10);
+}
+
+function defaultPlan() {
+  const startDate = localDateKey();
+  return {
+    startDate,
+    endDate: addLocalDays(startDate, 29),
+    planData: {}
+  };
+}
 const DEFAULT_GOALS = {
   targetWeight: "",
   targetWaist: "",
@@ -15,6 +30,17 @@ const DEFAULT_GOALS = {
   timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || "Asia/Bangkok",
   emailReminder: false
 };
+
+function isRecord(value) {
+  return value !== null && typeof value === "object" && !Array.isArray(value);
+}
+
+function isDateKey(value) {
+  if (typeof value !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+  const [year, month, day] = value.split("-").map(Number);
+  const date = new Date(Date.UTC(year, month - 1, day));
+  return Number.isFinite(date.getTime()) && date.toISOString().slice(0, 10) === value;
+}
 
 function readJson(key, fallback) {
   try {
@@ -25,6 +51,8 @@ function readJson(key, fallback) {
 }
 
 const cached = readJson(CACHE_KEY, {});
+const cachedPlan = isRecord(cached.plan) ? cached.plan : {};
+const fallbackPlan = defaultPlan();
 
 const sessionSlice = createSlice({
   name: "session",
@@ -52,18 +80,34 @@ const sessionSlice = createSlice({
 const dataSlice = createSlice({
   name: "data",
   initialState: {
-    logs: cached.logs || {},
-    planEdits: cached.planEdits || {},
-    goals: { ...DEFAULT_GOALS, ...(cached.goals || {}) },
-    plan: { ...DEFAULT_PLAN, ...(cached.plan || {}) },
-    syncState: "idle"
+    logs: isRecord(cached.logs) ? cached.logs : {},
+    planEdits: isRecord(cached.planEdits) ? cached.planEdits : {},
+    goals: { ...DEFAULT_GOALS, ...(isRecord(cached.goals) ? cached.goals : {}) },
+    plan: {
+      ...fallbackPlan,
+      ...cachedPlan,
+      startDate: isDateKey(cachedPlan.startDate) ? cachedPlan.startDate : fallbackPlan.startDate,
+      endDate: isDateKey(cachedPlan.endDate) ? cachedPlan.endDate : fallbackPlan.endDate
+    },
+    syncState: "idle",
+    loaded: false
   },
   reducers: {
     dataLoaded(state, action) {
+      const currentFallback = defaultPlan();
+      const nextPlan = isRecord(action.payload.plan) ? action.payload.plan : state.plan;
       Object.assign(state, action.payload, {
         goals: { ...DEFAULT_GOALS, ...(action.payload.goals || {}) },
-        plan: { ...DEFAULT_PLAN, ...(action.payload.plan || state.plan) },
-        syncState: "synced"
+        logs: isRecord(action.payload.logs) ? action.payload.logs : {},
+        planEdits: isRecord(action.payload.planEdits) ? action.payload.planEdits : {},
+        plan: {
+          ...currentFallback,
+          ...nextPlan,
+          startDate: isDateKey(nextPlan.startDate) ? nextPlan.startDate : currentFallback.startDate,
+          endDate: isDateKey(nextPlan.endDate) ? nextPlan.endDate : currentFallback.endDate
+        },
+        syncState: "synced",
+        loaded: true
       });
     },
     logSaved(state, action) {
@@ -81,12 +125,20 @@ const dataSlice = createSlice({
     syncChanged(state, action) {
       state.syncState = action.payload;
     },
+    dataLoading(state) {
+      state.loaded = false;
+    },
     progressReset(state, action) {
+      const currentFallback = defaultPlan();
       state.logs = {};
       state.planEdits = {};
       state.goals = { ...DEFAULT_GOALS };
-      state.plan = { ...DEFAULT_PLAN, ...action.payload };
+      state.plan = { ...currentFallback, ...action.payload };
       state.syncState = "synced";
+      state.loaded = true;
+    },
+    dataLoadFailed(state) {
+      state.loaded = true;
     },
     cleared() {
       return dataSlice.getInitialState();
@@ -106,7 +158,9 @@ export const {
   planEditSaved,
   goalsSaved,
   syncChanged,
+  dataLoading,
   progressReset,
+  dataLoadFailed,
   cleared
 } = dataSlice.actions;
 

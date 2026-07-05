@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useDispatch } from "react-redux";
 import { ArrowRight, CheckCircle2, Eye, EyeOff, LockKeyhole, Mail } from "lucide-react";
 import { api } from "../api";
-import { signedIn } from "../store";
+import { dataLoading, signedIn } from "../store";
 
 export function AuthPage({ showToast }) {
   const dispatch = useDispatch();
@@ -28,6 +28,7 @@ export function AuthPage({ showToast }) {
         method: "POST",
         body: JSON.stringify(payload)
       });
+      dispatch(dataLoading());
       dispatch(signedIn(result));
       showToast(mode === "login" ? "Đăng nhập thành công." : "Tài khoản đã được tạo.");
     } catch (error) {

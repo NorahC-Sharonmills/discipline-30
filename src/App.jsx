@@ -18,7 +18,7 @@ import {
 } from "lucide-react";
 import { api, flushQueue, importLegacyData } from "./api";
 import { buildPlan, formatDate, mergePlan } from "./plan";
-import { dataLoaded, signedOut, userLoaded } from "./store";
+import { dataLoaded, dataLoadFailed, dataLoading, signedOut, userLoaded } from "./store";
 import { AuthPage } from "./components/AuthPage";
 import { ToastRegion } from "./components/Toast";
 import { DashboardPage } from "./pages/DashboardPage";
@@ -42,13 +42,13 @@ export function App() {
   const navigate = useNavigate();
   const location = useLocation();
   const { token, user } = useSelector((state) => state.session);
-  const { logs, planEdits, plan, syncState } = useSelector((state) => state.data);
+  const { logs, planEdits, plan, syncState, loaded } = useSelector((state) => state.data);
   const [theme, setTheme] = useState(localStorage.getItem("discipline30.theme") || "light");
   const [mobileNav, setMobileNav] = useState(false);
   const [toasts, setToasts] = useState([]);
 
   const showToast = useCallback((message, tone = "success") => {
-    const id = crypto.randomUUID();
+    const id = crypto.randomUUID?.() || `${Date.now()}-${Math.random()}`;
     setToasts((items) => [...items, { id, message, tone }]);
     window.setTimeout(() => {
       setToasts((items) => items.filter((item) => item.id !== id));
@@ -68,16 +68,16 @@ export function App() {
     (async () => {
       try {
         await importLegacyData();
-        const [profile, data, savedPlan] = await Promise.all([
+        const [profile, data] = await Promise.all([
           api("/me"),
-          api("/data"),
-          api("/plan")
+          api("/data")
         ]);
         if (!active) return;
         dispatch(userLoaded(profile.user));
-        dispatch(dataLoaded({ ...data, plan: savedPlan || undefined }));
+        dispatch(dataLoaded(data));
       } catch (error) {
         if (!navigator.onLine) {
+          dispatch(dataLoadFailed());
           showToast("Đang dùng dữ liệu đã lưu trên thiết bị.", "warning");
           return;
         }
@@ -110,8 +110,17 @@ export function App() {
   );
 
   if (!token) return <AuthPage showToast={showToast} />;
+  if (!loaded) {
+    return (
+      <main className="loading-page">
+        <span className="loading-spinner" />
+        <p>Đang tải kế hoạch 30 ngày...</p>
+      </main>
+    );
+  }
 
   const logout = () => {
+    dispatch(dataLoading());
     dispatch(signedOut());
     navigate("/");
   };

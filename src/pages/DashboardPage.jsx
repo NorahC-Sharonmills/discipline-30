@@ -5,7 +5,9 @@ import { StatCard } from "../components/StatCard";
 export function DashboardPage({ days }) {
   const stats = calculateStats(days);
   const todayKey = new Date().toISOString().slice(0, 10);
-  const today = days.find((day) => day.date === todayKey) || days.find((day) => !day.completed) || days.at(-1);
+  const today = days.find((day) => day.date === todayKey)
+    || days.find((day) => !day.completed)
+    || days[days.length - 1];
   const recent = days.filter((day) => day.completed || day.actualKcal || day.note).slice(-5).reverse();
 
   return (

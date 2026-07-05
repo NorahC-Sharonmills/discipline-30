@@ -1,4 +1,4 @@
-import { Droplets, Flame, Moon, Salad, Soup, Utensils } from "lucide-react";
+import { CircleAlert, Droplets, Flame, Moon, Salad, Soup, Utensils } from "lucide-react";
 import { formatDate } from "../plan";
 
 export function PlanSummary({ day }) {
@@ -22,6 +22,13 @@ export function PlanSummary({ day }) {
             <div><small>{label}</small><strong>{value}</strong></div>
           </div>
         ))}
+      </div>
+      <div className="plan-caution">
+        <CircleAlert size={17} />
+        <span>
+          <strong>Đồ uống tùy chọn</strong>
+          <small>{day.herbalNote || "Không dùng thảo mộc để thay thuốc hoặc điều trị bệnh."}</small>
+        </span>
       </div>
     </section>
   );

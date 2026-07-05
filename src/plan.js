@@ -1,5 +1,3 @@
-export const PLAN_START = "2026-05-25";
-export const PLAN_END = "2026-06-23";
 export const BASE_KCAL = 1709;
 
 const breakfasts = [
@@ -7,6 +5,7 @@ const breakfasts = [
   "Sữa chua không đường, chuối nhỏ và 1 trứng",
   "Ngô luộc, 2 trứng và nước ấm",
   "Yến mạch 35g, sữa chua không đường và 1 trứng",
+  "Cháo kê vàng nấu loãng, 1-2 lát gừng, 1 quả táo đỏ nhỏ và 1 trứng",
   "Khoai lang, trứng và nước ấm",
   "Ngô hoặc khoai và 2 trứng",
   "Sữa chua không đường, trứng và trái cây ít ngọt"
@@ -29,13 +28,48 @@ const dinners = [
 ];
 
 const weekSettings = [
-  { max: 7, kcal: 1400, herbalType: "Đinh lăng pha loãng" },
-  { max: 14, kcal: 1350, herbalType: "Lá vối hoặc trà xanh pha loãng" },
-  { max: 21, kcal: 1300, herbalType: "Đỗ đen, kỷ tử, táo đỏ và sen" },
-  { max: 30, kcal: 1250, herbalType: "Atiso, tía tô hoặc bồ công anh pha loãng" }
+  { max: 7, kcal: 1400 },
+  { max: 14, kcal: 1350 },
+  { max: 21, kcal: 1300 },
+  { max: 30, kcal: 1250 }
 ];
 
+const optionalDrinks = [
+  {
+    name: "Nước ấm hoặc nước lọc",
+    note: "Lựa chọn ưu tiên; không cần thêm đường hoặc mật ong."
+  },
+  {
+    name: "Trà gừng loãng không đường",
+    note: "Chỉ dùng 1-2 lát gừng; ngừng nếu gây nóng rát, đau bụng hoặc khó chịu."
+  },
+  {
+    name: "Trà xanh pha nhạt không đường",
+    note: "Dùng trà pha thông thường, không dùng viên hoặc cao chiết xuất trà xanh."
+  },
+  {
+    name: "Trà hoa cúc pha nhạt không đường",
+    note: "Không dùng nếu dị ứng họ Cúc; hỏi bác sĩ nếu đang dùng thuốc chống đông."
+  },
+  {
+    name: "Nước kê vàng, gừng và táo đỏ pha loãng",
+    note: "Dùng như đồ uống tùy chọn, ít táo đỏ và không thêm đường; không coi là thuốc chữa bệnh."
+  }
+];
+
+function isRecord(value) {
+  return value !== null && typeof value === "object" && !Array.isArray(value);
+}
+
+function isDateKey(value) {
+  if (typeof value !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+  const [year, month, day] = value.split("-").map(Number);
+  const date = new Date(Date.UTC(year, month - 1, day));
+  return Number.isFinite(date.getTime()) && date.toISOString().slice(0, 10) === value;
+}
+
 function addDays(dateKey, offset) {
+  if (!isDateKey(dateKey)) dateKey = localDateKey();
   const [year, month, day] = dateKey.split("-").map(Number);
   const date = new Date(Date.UTC(year, month - 1, day + offset));
   return date.toISOString().slice(0, 10);
@@ -47,20 +81,25 @@ function localDateKey() {
   return new Date(now.getTime() - offset).toISOString().slice(0, 10);
 }
 
-export function buildPlan(edits = {}, startDate = PLAN_START) {
+export function buildPlan(edits = {}, startDate = localDateKey()) {
+  const safeEdits = isRecord(edits) ? edits : {};
   return Array.from({ length: 30 }, (_, index) => {
     const id = index + 1;
     const week = weekSettings.find((item) => id <= item.max);
-    const edit = edits[String(id)] || {};
+    const edit = isRecord(safeEdits[String(id)]) ? safeEdits[String(id)] : {};
+    const drink = optionalDrinks[index % optionalDrinks.length];
     const targetKcal = edit.targetKcal ?? week.kcal;
     return {
       id,
       date: addDays(startDate, index),
       targetKcal,
       deficitFrom1709: BASE_KCAL - targetKcal,
-      plainWaterLiter: 1.15,
-      herbalWaterLiter: 1.15,
-      herbalType: edit.herbalType ?? week.herbalType,
+      plainWaterLiter: 1.8,
+      herbalWaterLiter: 0.5,
+      herbalType: edit.herbalType ?? drink.name,
+      herbalNote: edit.herbalType
+        ? "Đồ uống tùy chọn, không thay thế nước lọc, thuốc hoặc hướng dẫn của bác sĩ."
+        : drink.note,
       breakfast: edit.breakfast ?? breakfasts[index % breakfasts.length],
       lunch: edit.lunch ?? lunches[index % lunches.length],
       dinner: edit.dinner ?? dinners[index % dinners.length],
@@ -74,8 +113,9 @@ export function buildPlan(edits = {}, startDate = PLAN_START) {
 
 export function mergePlan(plan, logs) {
   const today = localDateKey();
+  const safeLogs = isRecord(logs) ? logs : {};
   return plan.map((day) => {
-    const log = logs[String(day.id)] || {};
+    const log = isRecord(safeLogs[String(day.id)]) ? safeLogs[String(day.id)] : {};
     const status = log.completed
       ? "Hoàn thành"
       : day.date === today
@@ -119,10 +159,10 @@ export function calculateStats(days) {
     streak,
     averageKcal: average(values("actualKcal")),
     averageWater: average(values("actualWaterLiter")),
-    latestWeight: weight.at(-1) ?? null,
-    latestWaist: waist.at(-1) ?? null,
-    weightChange: weight.length > 1 ? weight.at(-1) - weight[0] : null,
-    waistChange: waist.length > 1 ? waist.at(-1) - waist[0] : null
+    latestWeight: weight.length ? weight[weight.length - 1] : null,
+    latestWaist: waist.length ? waist[waist.length - 1] : null,
+    weightChange: weight.length > 1 ? weight[weight.length - 1] - weight[0] : null,
+    waistChange: waist.length > 1 ? waist[waist.length - 1] - waist[0] : null
   };
 }
 
@@ -131,6 +171,7 @@ function average(values) {
 }
 
 export function formatDate(value) {
+  const safeValue = isDateKey(value) ? value : localDateKey();
   return new Intl.DateTimeFormat("vi-VN", { day: "2-digit", month: "2-digit", year: "numeric" })
-    .format(new Date(`${value}T00:00:00`));
+    .format(new Date(`${safeValue}T00:00:00`));
 }

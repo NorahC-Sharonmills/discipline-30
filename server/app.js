@@ -46,7 +46,7 @@ app.post("/api/auth/register", async (req, res, next) => {
          RETURNING id, email, name, created_at
        ), new_plan AS (
          INSERT INTO plans (user_id, start_date, end_date, plan_data)
-         SELECT id, DATE '2026-05-25', DATE '2026-06-23', '{}'::jsonb
+         SELECT id, CURRENT_DATE, CURRENT_DATE + 29, '{}'::jsonb
          FROM new_user
        )
        SELECT id, email, name, created_at FROM new_user`,
@@ -94,7 +94,7 @@ app.get("/api/me", requireAuth, async (req, res, next) => {
 
 app.get("/api/data", requireAuth, async (req, res, next) => {
   try {
-    const [logs, edits, goals] = await Promise.all([
+    const [logs, edits, goals, plan] = await Promise.all([
       query(
         `SELECT day_id, checklists, measurements, notes, completed
          FROM daily_logs WHERE user_id = $1 ORDER BY day_id`,
@@ -104,7 +104,13 @@ app.get("/api/data", requireAuth, async (req, res, next) => {
         "SELECT day_id, edit_data FROM plan_edits WHERE user_id = $1 ORDER BY day_id",
         [req.user.id]
       ),
-      query("SELECT goal_data FROM goals WHERE user_id = $1", [req.user.id])
+      query("SELECT goal_data FROM goals WHERE user_id = $1", [req.user.id]),
+      query(
+        `SELECT start_date::text AS "startDate", end_date::text AS "endDate",
+                plan_data AS "planData"
+         FROM plans WHERE user_id = $1`,
+        [req.user.id]
+      )
     ]);
 
     res.json({
@@ -118,7 +124,8 @@ app.get("/api/data", requireAuth, async (req, res, next) => {
         }
       ])),
       planEdits: Object.fromEntries(edits.rows.map((row) => [row.day_id, row.edit_data])),
-      goals: goals.rows[0]?.goal_data || {}
+      goals: goals.rows[0]?.goal_data || {},
+      plan: plan.rows[0] || null
     });
   } catch (error) {
     next(error);
@@ -128,7 +135,8 @@ app.get("/api/data", requireAuth, async (req, res, next) => {
 app.get("/api/plan", requireAuth, async (req, res, next) => {
   try {
     const result = await query(
-      `SELECT start_date AS "startDate", end_date AS "endDate", plan_data AS "planData"
+      `SELECT start_date::text AS "startDate", end_date::text AS "endDate",
+              plan_data AS "planData"
        FROM plans WHERE user_id = $1`,
       [req.user.id]
     );
@@ -248,10 +256,11 @@ app.post("/api/reset", requireAuth, async (req, res, next) => {
        VALUES ($1, $2::date, $2::date + 29, '{}'::jsonb)
        ON CONFLICT (user_id) DO UPDATE SET
          start_date = EXCLUDED.start_date,
-         end_date = EXCLUDED.end_date,
-         plan_data = EXCLUDED.plan_data,
-         updated_at = NOW()
-       RETURNING start_date AS "startDate", end_date AS "endDate", plan_data AS "planData"`,
+       end_date = EXCLUDED.end_date,
+       plan_data = EXCLUDED.plan_data,
+       updated_at = NOW()
+       RETURNING start_date::text AS "startDate", end_date::text AS "endDate",
+                 plan_data AS "planData"`,
       [req.user.id, startDate]
     );
     res.json({ ok: true, plan: result.rows[0] });
